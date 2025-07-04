@@ -66,33 +66,57 @@ async function deleteClothingItem(req, res) {
   }
 }
 
-likeItem = (req, res) =>
+const likeItem = (req, res) => {
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
     { $addToSet: { likes: req.user._id } },
     { new: true }
   )
+    .orFail(() => {
+      const error = new Error("Clothing item not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
+    })
     .then((item) => res.status(200).json(item))
     .catch((error) => {
       console.error(error);
+      if (error.name === "CastError") {
+        return res.status(BAD_REQUEST).json({ message: "Invalid item ID" });
+      }
+      if (error.statusCode === NOT_FOUND) {
+        return res.status(NOT_FOUND).json({ message: error.message });
+      }
       res
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
+};
 
-dislikeItem = (req, res) =>
+const dislikeItem = (req, res) => {
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
     { $pull: { likes: req.user._id } },
     { new: true }
   )
+    .orFail(() => {
+      const error = new Error("Clothing item not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
+    })
     .then((item) => res.status(200).json(item))
     .catch((error) => {
       console.error(error);
+      if (error.name === "CastError") {
+        return res.status(BAD_REQUEST).json({ message: "Invalid item ID" });
+      }
+      if (error.statusCode === NOT_FOUND) {
+        return res.status(NOT_FOUND).json({ message: error.message });
+      }
       res
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
+};
 
 module.exports = {
   getClothingItems,
