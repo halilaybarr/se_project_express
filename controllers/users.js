@@ -1,28 +1,43 @@
 const User = require("../models/user");
-const router = require("express").Router();
-
-
-module.exports = router;
+const {
+  BAD_REQUEST,
+  NOT_FOUND,
+  INTERNAL_SERVER_ERROR,
+} = require("../utils/errors");
 
 module.exports.getUsers = (req, res) => {
   User.find({})
     .then((users) => res.status(200).json(users))
-    .catch((err) =>
-      res.status(500).json({ message: "Error fetching users", error: err })
-    );
+    .catch((err) => {
+      console.error(err);
+      res
+        .status(INTERNAL_SERVER_ERROR)
+        .json({ message: "An error has occurred on the server." });
+    });
 };
 
 module.exports.getUser = (req, res) => {
-  User.findById(req.params.id)
+  User.findById(req.params.userId)
+    .orFail(() => {
+      const error = new Error("User not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
+    })
     .then((user) => {
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
       res.status(200).json(user);
     })
-    .catch((err) =>
-      res.status(500).json({ message: "Error fetching user", error: err })
-    );
+    .catch((err) => {
+      console.error(err);
+      if (err.name === "CastError") {
+        return res.status(BAD_REQUEST).json({ message: "Invalid user ID" });
+      }
+      if (err.statusCode === NOT_FOUND) {
+        return res.status(NOT_FOUND).json({ message: err.message });
+      }
+      res
+        .status(INTERNAL_SERVER_ERROR)
+        .json({ message: "An error has occurred on the server." });
+    });
 };
 
 module.exports.createUser = (req, res) => {
@@ -32,7 +47,15 @@ module.exports.createUser = (req, res) => {
   newUser
     .save()
     .then((user) => res.status(201).json(user))
-    .catch((err) =>
-      res.status(400).json({ message: "Error creating user", error: err })
-    );
+    .catch((err) => {
+      console.error(err);
+      if (err.name === "ValidationError") {
+        return res
+          .status(BAD_REQUEST)
+          .json({ message: "Validation error occurred" });
+      }
+      res
+        .status(INTERNAL_SERVER_ERROR)
+        .json({ message: "An error has occurred on the server." });
+    });
 };

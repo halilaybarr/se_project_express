@@ -1,16 +1,25 @@
 const { ClothingItem } = require("../models/clothingItems");
+const {
+  BAD_REQUEST,
+  NOT_FOUND,
+  INTERNAL_SERVER_ERROR,
+} = require("../utils/errors");
 
 async function getClothingItems(req, res) {
   try {
     const clothingItems = await ClothingItem.find({}).populate("owner likes");
     res.status(200).json(clothingItems);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching clothing items" });
+    console.error(error);
+    res
+      .status(INTERNAL_SERVER_ERROR)
+      .json({ message: "An error has occurred on the server." });
   }
 }
 
 async function createClothingItem(req, res) {
-  const { name, weather, imageUrl, owner } = req.body;
+  const { name, weather, imageUrl } = req.body;
+  const owner = req.user._id;
   try {
     const newClothingItem = new ClothingItem({
       name,
@@ -21,7 +30,15 @@ async function createClothingItem(req, res) {
     await newClothingItem.save();
     res.status(201).json(newClothingItem);
   } catch (error) {
-    res.status(400).json({ message: "Error creating clothing item", error });
+    console.error(error);
+    if (error.name === "ValidationError") {
+      return res
+        .status(BAD_REQUEST)
+        .json({ message: "Invalid data passed to create clothing item" });
+    }
+    res
+      .status(INTERNAL_SERVER_ERROR)
+      .json({ message: "An error has occurred on the server." });
   }
 }
 
@@ -29,18 +46,58 @@ async function deleteClothingItem(req, res) {
   try {
     const clothingItem = await ClothingItem.findByIdAndDelete(
       req.params.itemId
-    );
-    if (!clothingItem) {
-      return res.status(404).json({ message: "Clothing item not found" });
-    }
+    ).orFail(() => {
+      const error = new Error("Clothing item not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
+    });
     res.status(200).json({ message: "Clothing item deleted successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Error deleting clothing item", error });
+    console.error(error);
+    if (error.name === "CastError") {
+      return res.status(BAD_REQUEST).json({ message: "Invalid item ID" });
+    }
+    if (error.statusCode === NOT_FOUND) {
+      return res.status(NOT_FOUND).json({ message: error.message });
+    }
+    res
+      .status(INTERNAL_SERVER_ERROR)
+      .json({ message: "An error has occurred on the server." });
   }
 }
+
+likeItem = (req, res) =>
+  ClothingItem.findByIdAndUpdate(
+    req.params.itemId,
+    { $addToSet: { likes: req.user._id } },
+    { new: true }
+  )
+    .then((item) => res.status(200).json(item))
+    .catch((error) => {
+      console.error(error);
+      res
+        .status(INTERNAL_SERVER_ERROR)
+        .json({ message: "An error has occurred on the server." });
+    });
+
+dislikeItem = (req, res) =>
+  ClothingItem.findByIdAndUpdate(
+    req.params.itemId,
+    { $pull: { likes: req.user._id } },
+    { new: true }
+  )
+    .then((item) => res.status(200).json(item))
+    .catch((error) => {
+      console.error(error);
+      res
+        .status(INTERNAL_SERVER_ERROR)
+        .json({ message: "An error has occurred on the server." });
+    });
 
 module.exports = {
   getClothingItems,
   createClothingItem,
   deleteClothingItem,
+  likeItem,
+  dislikeItem,
 };
