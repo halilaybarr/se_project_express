@@ -46,7 +46,7 @@ module.exports.createUser = (req, res) => {
   const { name, avatar } = req.body;
   const newUser = new User({ name, avatar });
 
-  newUser
+  return newUser
     .save()
     .then((user) => res.status(201).json(user))
     .catch((err) => {
