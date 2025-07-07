@@ -27,6 +27,4 @@ app.use((req, res) => {
   res.status(NOT_FOUND).json({ message: "Requested resource not found" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+app.listen(PORT);

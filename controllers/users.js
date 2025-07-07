@@ -5,42 +5,34 @@ const {
   INTERNAL_SERVER_ERROR,
 } = require("../utils/errors");
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res) =>
   User.find({})
     .then((users) => res.status(200).json(users))
-    .catch((err) => {
-      console.error(err);
+    .catch(() =>
       res
         .status(INTERNAL_SERVER_ERROR)
-        .json({ message: "An error has occurred on the server." });
-    });
-  return null;
-};
+        .json({ message: "An error has occurred on the server." })
+    );
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res) =>
   User.findById(req.params.userId)
     .orFail(() => {
       const error = new Error("User not found");
       error.statusCode = NOT_FOUND;
       throw error;
     })
-    .then((user) => {
-      res.status(200).json(user);
-    })
+    .then((user) => res.status(200).json(user))
     .catch((err) => {
-      console.error(err);
       if (err.name === "CastError") {
         return res.status(BAD_REQUEST).json({ message: "Invalid user ID" });
       }
       if (err.statusCode === NOT_FOUND) {
         return res.status(NOT_FOUND).json({ message: err.message });
       }
-      res
+      return res
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
-  return null;
-};
 
 module.exports.createUser = (req, res) => {
   const { name, avatar } = req.body;
@@ -50,15 +42,13 @@ module.exports.createUser = (req, res) => {
     .save()
     .then((user) => res.status(201).json(user))
     .catch((err) => {
-      console.error(err);
       if (err.name === "ValidationError") {
         return res
           .status(BAD_REQUEST)
           .json({ message: "Validation error occurred" });
       }
-      res
+      return res
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
-  return null;
 };

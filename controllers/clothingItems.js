@@ -10,7 +10,6 @@ async function getClothingItems(req, res) {
     const clothingItems = await ClothingItem.find({}).populate("owner likes");
     res.status(200).json(clothingItems);
   } catch (error) {
-    console.error(error);
     res
       .status(INTERNAL_SERVER_ERROR)
       .json({ message: "An error has occurred on the server." });
@@ -50,7 +49,6 @@ async function deleteClothingItem(req, res) {
     });
     res.status(200).json({ message: "Clothing item deleted successfully" });
   } catch (error) {
-    console.error(error);
     if (error.name === "CastError") {
       return res.status(BAD_REQUEST).json({ message: "Invalid item ID" });
     }
@@ -64,7 +62,7 @@ async function deleteClothingItem(req, res) {
   return null;
 }
 
-const likeItem = (req, res) => {
+const likeItem = (req, res) =>
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
     { $addToSet: { likes: req.user._id } },
@@ -77,21 +75,19 @@ const likeItem = (req, res) => {
     })
     .then((item) => res.status(200).json(item))
     .catch((error) => {
-      console.error(error);
+      // console.error(error);
       if (error.name === "CastError") {
         return res.status(BAD_REQUEST).json({ message: "Invalid item ID" });
       }
       if (error.statusCode === NOT_FOUND) {
         return res.status(NOT_FOUND).json({ message: error.message });
       }
-      res
+      return res
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
-  return null;
-};
 
-const dislikeItem = (req, res) => {
+const dislikeItem = (req, res) =>
   ClothingItem.findByIdAndUpdate(
     req.params.itemId,
     { $pull: { likes: req.user._id } },
@@ -104,19 +100,17 @@ const dislikeItem = (req, res) => {
     })
     .then((item) => res.status(200).json(item))
     .catch((error) => {
-      console.error(error);
+      // console.error(error);
       if (error.name === "CastError") {
         return res.status(BAD_REQUEST).json({ message: "Invalid item ID" });
       }
       if (error.statusCode === NOT_FOUND) {
         return res.status(NOT_FOUND).json({ message: error.message });
       }
-      res
+      return res
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
-  return null;
-};
 
 module.exports = {
   getClothingItems,
