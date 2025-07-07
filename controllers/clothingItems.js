@@ -28,15 +28,14 @@ async function createClothingItem(req, res) {
       owner,
     });
     await newClothingItem.save();
-    res.status(201).json(newClothingItem);
+    return res.status(201).json(newClothingItem);
   } catch (error) {
-    console.error(error);
     if (error.name === "ValidationError") {
       return res
         .status(BAD_REQUEST)
         .json({ message: "Invalid data passed to create clothing item" });
     }
-    res
+    return res
       .status(INTERNAL_SERVER_ERROR)
       .json({ message: "An error has occurred on the server." });
   }
@@ -44,9 +43,7 @@ async function createClothingItem(req, res) {
 
 async function deleteClothingItem(req, res) {
   try {
-    const clothingItem = await ClothingItem.findByIdAndDelete(
-      req.params.itemId
-    ).orFail(() => {
+    await ClothingItem.findByIdAndDelete(req.params.itemId).orFail(() => {
       const error = new Error("Clothing item not found");
       error.statusCode = NOT_FOUND;
       throw error;
@@ -64,6 +61,7 @@ async function deleteClothingItem(req, res) {
       .status(INTERNAL_SERVER_ERROR)
       .json({ message: "An error has occurred on the server." });
   }
+  return null;
 }
 
 const likeItem = (req, res) => {
@@ -90,6 +88,7 @@ const likeItem = (req, res) => {
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
+  return null;
 };
 
 const dislikeItem = (req, res) => {
@@ -116,6 +115,7 @@ const dislikeItem = (req, res) => {
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
+  return null;
 };
 
 module.exports = {

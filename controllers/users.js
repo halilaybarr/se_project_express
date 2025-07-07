@@ -14,6 +14,7 @@ module.exports.getUsers = (req, res) => {
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
+  return null;
 };
 
 module.exports.getUser = (req, res) => {
@@ -38,6 +39,7 @@ module.exports.getUser = (req, res) => {
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
+  return null;
 };
 
 module.exports.createUser = (req, res) => {
@@ -58,4 +60,5 @@ module.exports.createUser = (req, res) => {
         .status(INTERNAL_SERVER_ERROR)
         .json({ message: "An error has occurred on the server." });
     });
+  return null;
 };

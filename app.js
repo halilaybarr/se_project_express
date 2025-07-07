@@ -1,6 +1,8 @@
 const express = require("express");
+
 const app = express();
 const mongoose = require("mongoose");
+
 app.use(express.json());
 const { PORT = 3001 } = process.env;
 
@@ -14,8 +16,16 @@ app.use((req, res, next) => {
 
 const clothingItemsRouter = require("./routes/clothingItems");
 const usersRouter = require("./routes/users");
+
 app.use("/items", clothingItemsRouter);
 app.use("/users", usersRouter);
+
+const { NOT_FOUND } = require("./utils/errors");
+
+// Unknown route handler
+app.use((req, res) => {
+  res.status(NOT_FOUND).json({ message: "Requested resource not found" });
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
