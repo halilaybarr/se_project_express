@@ -10,7 +10,7 @@ const { PORT = 3001 } = process.env;
 const clothingItemsRouter = require("./routes/clothingItems");
 const usersRouter = require("./routes/users");
 const { loginUser, createUser } = require("./controllers/users");
-const { getClothingItems } = require("./controllers/clothingitems");
+const { getClothingItems } = require("./controllers/clothingitems.js");
 const auth = require("./middlewares/auth");
 const { NOT_FOUND } = require("./utils/errors");
 
