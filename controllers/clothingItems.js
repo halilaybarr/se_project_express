@@ -3,6 +3,7 @@ const {
   BAD_REQUEST,
   NOT_FOUND,
   INTERNAL_SERVER_ERROR,
+  FORBIDDEN_ERROR,
 } = require("../utils/errors");
 
 async function getClothingItems(req, res) {
@@ -42,11 +43,21 @@ async function createClothingItem(req, res) {
 
 async function deleteClothingItem(req, res) {
   try {
-    await ClothingItem.findByIdAndDelete(req.params.itemId).orFail(() => {
+
+    const item = await ClothingItem.findById(req.params.itemId).orFail(() => {
       const error = new Error("Clothing item not found");
       error.statusCode = NOT_FOUND;
       throw error;
     });
+
+    if (item.owner.toString() !== req.user._id.toString()) {
+      return res.status(FORBIDDEN_ERROR).json({
+        message: "You don't have permission to delete this item",
+      });
+    }
+
+
+    await ClothingItem.findByIdAndDelete(req.params.itemId);
     res.status(200).json({ message: "Clothing item deleted successfully" });
   } catch (error) {
     if (error.name === "CastError") {
@@ -55,7 +66,7 @@ async function deleteClothingItem(req, res) {
     if (error.statusCode === NOT_FOUND) {
       return res.status(NOT_FOUND).json({ message: error.message });
     }
-    res
+    return res
       .status(INTERNAL_SERVER_ERROR)
       .json({ message: "An error has occurred on the server." });
   }
