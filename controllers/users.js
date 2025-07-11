@@ -1,6 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const { User } = require("../models/user");
+const User = require("../models/user");
 const {
   BAD_REQUEST,
   NOT_FOUND,
@@ -14,41 +14,6 @@ function removePassword(user) {
   const { password, ...userWithoutPassword } = user.toObject();
   return userWithoutPassword;
 }
-
-module.exports.getUsers = (req, res) =>
-  User.find({})
-    .then((users) => {
-      const usersWithoutPassword = users.map(removePassword);
-      return res.status(200).json(usersWithoutPassword);
-    })
-    .catch(() =>
-      res
-        .status(INTERNAL_SERVER_ERROR)
-        .json({ message: "An error has occurred on the server." })
-    );
-
-module.exports.getCurrentUser = (req, res) =>
-  User.findById(req.user._id)
-    .orFail(() => {
-      const error = new Error("User not found");
-      error.statusCode = NOT_FOUND;
-      throw error;
-    })
-    .then((user) => {
-      const userWithoutPassword = removePassword(user);
-      return res.status(200).json(userWithoutPassword);
-    })
-    .catch((err) => {
-      if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).json({ message: "Invalid user ID" });
-      }
-      if (err.statusCode === NOT_FOUND) {
-        return res.status(NOT_FOUND).json({ message: err.message });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .json({ message: "An error has occurred on the server." });
-    });
 
 module.exports.createUser = (req, res) => {
   const { name, avatar, email, password } = req.body;
