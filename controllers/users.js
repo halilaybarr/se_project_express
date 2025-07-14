@@ -53,6 +53,12 @@ module.exports.createUser = (req, res) => {
 module.exports.loginUser = (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(BAD_REQUEST).json({
+      message: "Email and password are required",
+    });
+  }
+
   return User.findOne({ email })
     .select("+password")
     .then((user) => {
@@ -117,3 +123,26 @@ module.exports.updateProfile = (req, res) => {
         .json({ message: "An error has occurred on the server." });
     });
 };
+
+module.exports.getCurrentUser = (req, res) =>
+  User.findById(req.user._id)
+    .orFail(() => {
+      const error = new Error("User not found");
+      error.statusCode = NOT_FOUND;
+      throw error;
+    })
+    .then((user) => {
+      const userWithoutPassword = removePassword(user);
+      return res.status(200).json(userWithoutPassword);
+    })
+    .catch((err) => {
+      if (err.name === "CastError") {
+        return res.status(BAD_REQUEST).json({ message: "Invalid user ID" });
+      }
+      if (err.statusCode === NOT_FOUND) {
+        return res.status(NOT_FOUND).json({ message: err.message });
+      }
+      return res
+        .status(INTERNAL_SERVER_ERROR)
+        .json({ message: "An error has occurred on the server." });
+    });
