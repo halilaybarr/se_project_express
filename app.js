@@ -1,10 +1,11 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors"); // Move this up with other imports
+const cors = require("cors");
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 const { PORT = 3001 } = process.env;
 
 const clothingItemsRouter = require("./routes/clothingItems");
