@@ -1,13 +1,10 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
-const {
-  BAD_REQUEST,
-  NOT_FOUND,
-  INTERNAL_SERVER_ERROR,
-  CONFLICT_ERROR,
-  AUTHORIZATION_ERROR,
-} = require("../utils/errors");
+const BadRequestError = require("../utils/BadRequestError");
+const NotFoundError = require("../utils/NotFoundError");
+const ConflictError = require("../utils/ConflictError");
+const UnauthorizedError = require("../utils/UnauthorizedError");
 const { JWT_SECRET } = require("../utils/config");
 
 function removePassword(user) {
@@ -15,7 +12,7 @@ function removePassword(user) {
   return userWithoutPassword;
 }
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, avatar, email, password } = req.body;
 
   return bcrypt
@@ -32,43 +29,36 @@ module.exports.createUser = (req, res) => {
     .then((user) => res.status(201).json(user))
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res
-          .status(BAD_REQUEST)
-          .json({ message: "Validation error occurred" });
+        return next(new BadRequestError("Validation error occurred"));
       }
       if (err.name === "MongoServerError" && err.code === 11000) {
-        return res
-          .status(CONFLICT_ERROR)
-          .json({ message: "Email already exists" });
+        return next(new ConflictError("Email already exists"));
       }
-      if (err.statusCode === NOT_FOUND) {
-        return res.status(NOT_FOUND).json({ message: err.message });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .json({ message: "An error has occurred on the server." });
+      return next(err);
     });
 };
 
-module.exports.loginUser = (req, res) => {
+module.exports.loginUser = (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(BAD_REQUEST).json({
-      message: "Email and password are required",
-    });
+    return next(new BadRequestError("Email and password are required"));
   }
 
   return User.findOne({ email })
     .select("+password")
     .then((user) => {
       if (!user) {
-        return Promise.reject(new Error("Invalid email or password"));
+        return Promise.reject(
+          new UnauthorizedError("Invalid email or password")
+        );
       }
 
       return bcrypt.compare(password, user.password).then((isMatch) => {
         if (!isMatch) {
-          return Promise.reject(new Error("Invalid email or password"));
+          return Promise.reject(
+            new UnauthorizedError("Invalid email or password")
+          );
         }
         const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
           expiresIn: "7d",
@@ -77,16 +67,11 @@ module.exports.loginUser = (req, res) => {
       });
     })
     .catch((err) => {
-      if (err.message === "Invalid email or password") {
-        return res.status(AUTHORIZATION_ERROR).json({ message: err.message });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .json({ message: "An error has occurred on the server." });
+      next(err);
     });
 };
 
-module.exports.updateProfile = (req, res) => {
+module.exports.updateProfile = (req, res, next) => {
   const { name, avatar } = req.body;
 
   return User.findByIdAndUpdate(
@@ -98,9 +83,7 @@ module.exports.updateProfile = (req, res) => {
     }
   )
     .orFail(() => {
-      const error = new Error("User not found");
-      error.statusCode = NOT_FOUND;
-      throw error;
+      throw new NotFoundError("User not found");
     })
     .then((user) => {
       const userWithoutPassword = removePassword(user);
@@ -108,28 +91,19 @@ module.exports.updateProfile = (req, res) => {
     })
     .catch((err) => {
       if (err.name === "ValidationError") {
-        return res
-          .status(BAD_REQUEST)
-          .json({ message: "Invalid data provided" });
+        return next(new BadRequestError("Invalid data provided"));
       }
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).json({ message: "Invalid user ID" });
+        return next(new BadRequestError("Invalid user ID"));
       }
-      if (err.statusCode === NOT_FOUND) {
-        return res.status(NOT_FOUND).json({ message: err.message });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .json({ message: "An error has occurred on the server." });
+      return next(err);
     });
 };
 
-module.exports.getCurrentUser = (req, res) =>
+module.exports.getCurrentUser = (req, res, next) =>
   User.findById(req.user._id)
     .orFail(() => {
-      const error = new Error("User not found");
-      error.statusCode = NOT_FOUND;
-      throw error;
+      throw new NotFoundError("User not found");
     })
     .then((user) => {
       const userWithoutPassword = removePassword(user);
@@ -137,12 +111,7 @@ module.exports.getCurrentUser = (req, res) =>
     })
     .catch((err) => {
       if (err.name === "CastError") {
-        return res.status(BAD_REQUEST).json({ message: "Invalid user ID" });
+        return next(new BadRequestError("Invalid user ID"));
       }
-      if (err.statusCode === NOT_FOUND) {
-        return res.status(NOT_FOUND).json({ message: err.message });
-      }
-      return res
-        .status(INTERNAL_SERVER_ERROR)
-        .json({ message: "An error has occurred on the server." });
+      return next(err);
     });
