@@ -1,6 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const { errors } = require("celebrate");
 
 const app = express();
 
@@ -15,13 +16,21 @@ const { getClothingItems } = require("./controllers/clothingItems");
 const auth = require("./middlewares/auth");
 const NotFoundError = require("./utils/NotFoundError");
 const errorHandler = require("./middlewares/error-handler");
+const {
+  validateAuthentication,
+  validateUserBody,
+} = require("./middlewares/validation");
+const { requestLogger, errorLogger } = require("./middlewares/logger");
 
 mongoose.connect("mongodb://127.0.0.1:27017/wtwr_db");
 
 app.use(cors());
 
-app.post("/signin", loginUser);
-app.post("/signup", createUser);
+// enable request logger
+app.use(requestLogger);
+
+app.post("/signin", validateAuthentication, loginUser);
+app.post("/signup", validateUserBody, createUser);
 
 app.get("/items", getClothingItems);
 
@@ -33,6 +42,13 @@ app.use((req, res, next) => {
   next(new NotFoundError("Requested resource not found"));
 });
 
+// enabling the error logger
+app.use(errorLogger);
+
+// celebrate error handler
+app.use(errors());
+
+// our centralized handler
 app.use(errorHandler);
 
 app.listen(PORT);
