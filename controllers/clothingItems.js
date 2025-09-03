@@ -45,7 +45,9 @@ async function deleteClothingItem(req, res, next) {
     }
 
     await ClothingItem.findByIdAndDelete(req.params.itemId);
-    res.status(200).json({ message: "Clothing item deleted successfully" });
+    return res
+      .status(200)
+      .json({ message: "Clothing item deleted successfully" });
   } catch (error) {
     if (error.name === "CastError") {
       return next(new BadRequestError("Invalid item ID"));

@@ -2,6 +2,12 @@
 
 This project is the backend for the WTWR (What to Wear?) application. It provides a RESTful API for managing users and clothing items, including features for creating, retrieving, deleting, and liking/unliking clothing items. The backend is built with Node.js, Express, and MongoDB, and follows best practices for error handling, validation, and project structure.
 
+## Deployed Application
+
+- **Frontend Domain**: https://wtwrhalil.jumpingcrab.com
+- **API Domain**: https://api.wtwrhalil.jumpingcrab.com
+- **Frontend Repository**: https://github.com/halilaybarr/se_project_wtwr_halil
+
 ## Project Functionality
 
 - User management: create users, get all users, get a user by ID.

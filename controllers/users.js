@@ -8,8 +8,9 @@ const UnauthorizedError = require("../utils/UnauthorizedError");
 const { JWT_SECRET } = require("../utils/config");
 
 function removePassword(user) {
-  const { password, ...userWithoutPassword } = user.toObject();
-  return userWithoutPassword;
+  const userObject = user.toObject();
+  delete userObject.password;
+  return userObject;
 }
 
 module.exports.createUser = (req, res, next) => {
