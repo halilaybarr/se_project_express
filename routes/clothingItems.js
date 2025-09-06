@@ -2,7 +2,6 @@ const router = require("express").Router();
 const clothingItemsController = require("../controllers/clothingItems");
 const { validateCardBody, validateId } = require("../middlewares/validation");
 
-router.get("/", clothingItemsController.getClothingItems);
 router.post("/", validateCardBody, clothingItemsController.createClothingItem);
 router.delete(
   "/:itemId",
