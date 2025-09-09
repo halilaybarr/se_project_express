@@ -1,9 +1,9 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const { errors } = require("celebrate");
 
 const rateLimiter = require("./middlewares/rateLimiter");
-const { errors } = require("celebrate");
 require("dotenv").config();
 
 const app = express();
@@ -15,7 +15,6 @@ const { PORT = 3001 } = process.env;
 
 const routes = require("./routes");
 const { loginUser, createUser } = require("./controllers/users");
-const { getClothingItems } = require("./controllers/clothingItems");
 const auth = require("./middlewares/auth");
 const NotFoundError = require("./utils/NotFoundError");
 const errorHandler = require("./middlewares/error-handler");
@@ -25,10 +24,10 @@ const {
 } = require("./middlewares/validation");
 const { requestLogger, errorLogger } = require("./middlewares/logger");
 
-mongoose.connect("mongodb://127.0.0.1:27017/wtwr_db")
-  .catch((err) => {
-    console.error("Failed to connect to MongoDB:", err);
-  });
+mongoose.connect("mongodb://127.0.0.1:27017/wtwr_db").catch((err) => {
+  // eslint-disable-next-line no-console
+  console.error("Failed to connect to MongoDB:", err);
+});
 
 // app.use(cors()); // Already called above
 
@@ -64,5 +63,6 @@ app.use(errors());
 app.use(errorHandler);
 
 app.listen(PORT, () => {
+  // eslint-disable-next-line no-console
   console.log(`App is listening on port ${PORT}`);
 });
