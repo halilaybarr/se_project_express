@@ -8,13 +8,24 @@ require("dotenv").config();
 
 const app = express();
 
+const corsOptions = {
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://wtwrhalil.jumpingcrab.com",
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
 app.use(express.json());
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(rateLimiter);
 const { PORT = 3001 } = process.env;
 
 const routes = require("./routes");
 const { loginUser, createUser } = require("./controllers/users");
+const { getClothingItems } = require("./controllers/clothingItems");
 const auth = require("./middlewares/auth");
 const NotFoundError = require("./utils/NotFoundError");
 const errorHandler = require("./middlewares/error-handler");
@@ -45,6 +56,8 @@ app.get("/crash-test", (req, res) => {
 
 app.post("/signin", validateAuthentication, loginUser);
 app.post("/signup", validateUserBody, createUser);
+
+app.get("/items", getClothingItems);
 
 app.use(auth);
 app.use(routes);
